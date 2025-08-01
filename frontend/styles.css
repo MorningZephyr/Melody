@@ -1,0 +1,176 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.piano-container {
+    position: relative;
+    margin: 40px 0;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.piano-keys {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+    height: 120px;
+}
+
+.piano-key {
+    width: 40px;
+    height: 120px;
+    border: 2px solid #333;
+    background: white;
+    margin: 0 1px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.piano-key.active {
+    background: #ff6b6b;
+    transform: translateY(5px);
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+}
+
+.piano-key.black {
+    background: #333;
+    color: white;
+    height: 80px;
+    width: 25px;
+    position: absolute;
+    z-index: 2;
+}
+
+.hand-overlay {
+    position: relative;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#hand-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.finger {
+    fill: #ff6b6b;
+    stroke: #333;
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+.finger.active {
+    fill: #ff4757;
+    stroke: #2f3542;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.6));
+}
+
+.finger-label {
+    font-size: 12px;
+    font-weight: bold;
+    text-anchor: middle;
+    fill: white;
+    stroke: #333;
+    stroke-width: 0.5;
+}
+
+.info-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.info-panel h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.info-panel div {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .piano-key {
+        width: 30px;
+        font-size: 10px;
+    }
+    
+    .piano-key.black {
+        width: 20px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+} 

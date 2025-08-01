@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Test</title>
+    <style>
+        .hand-overlay {
+            position: relative;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        #hand-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .finger {
+            fill: #ff6b6b;
+            stroke: #333;
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+
+        .finger.active {
+            fill: #ff4757;
+            stroke: #2f3542;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.6));
+        }
+
+        .finger-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            fill: white;
+            stroke: #333;
+            stroke-width: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hand Visualization Test</h1>
+    
+    <div class="hand-overlay">
+        <svg id="hand-svg" width="600" height="300">
+            <g id="hand-group">
+                <!-- Fingers will be added here -->
+            </g>
+        </svg>
+    </div>
+
+    <button onclick="testHand()">Test Hand</button>
+    <button onclick="highlightFinger('thumb')">Highlight Thumb</button>
+    <button onclick="highlightFinger('index')">Highlight Index</button>
+
+    <script>
+        function createHandVisualization() {
+            const handGroup = document.getElementById('hand-group');
+            
+            // Create 5 fingers (thumb to pinky)
+            const fingers = [
+                { id: 'thumb', x: 100, y: 200, label: 'T', color: '#ff6b6b' },
+                { id: 'index', x: 120, y: 180, label: '1', color: '#ff6b6b' },
+                { id: 'middle', x: 140, y: 160, label: '2', color: '#ff6b6b' },
+                { id: 'ring', x: 160, y: 180, label: '3', color: '#ff6b6b' },
+                { id: 'pinky', x: 180, y: 200, label: '4', color: '#ff6b6b' }
+            ];
+
+            fingers.forEach(finger => {
+                // Create finger circle
+                const fingerElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                fingerElement.setAttribute('cx', finger.x);
+                fingerElement.setAttribute('cy', finger.y);
+                fingerElement.setAttribute('r', '15');
+                fingerElement.setAttribute('class', 'finger');
+                fingerElement.setAttribute('id', finger.id);
+                
+                // Create finger label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', finger.x);
+                label.setAttribute('y', finger.y + 4);
+                label.setAttribute('class', 'finger-label');
+                label.textContent = finger.label;
+                
+                handGroup.appendChild(fingerElement);
+                handGroup.appendChild(label);
+            });
+            
+            console.log('Hand created with', fingers.length, 'fingers');
+        }
+
+        function highlightFinger(fingerId) {
+            // Clear all highlights
+            document.querySelectorAll('.finger').forEach(finger => {
+                finger.classList.remove('active');
+            });
+            
+            // Highlight specific finger
+            const fingerElement = document.getElementById(fingerId);
+            if (fingerElement) {
+                fingerElement.classList.add('active');
+                console.log('Highlighted finger:', fingerId);
+            }
+        }
+
+        function testHand() {
+            createHandVisualization();
+            console.log('Hand test completed');
+        }
+
+        // Create hand when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createHandVisualization();
+        });
+    </script>
+</body>
+</html> 

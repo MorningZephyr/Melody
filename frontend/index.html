@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Learning App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Piano Learning App</h1>
+        
+        <div class="controls">
+            <button id="load-midi">Load MIDI File</button>
+            <button id="play-pause">Play/Pause</button>
+            <button id="reset">Reset</button>
+        </div>
+
+        <div class="piano-container">
+            <div class="piano-keys" id="piano-keys">
+                <!-- Piano keys will be generated here -->
+            </div>
+            
+            <div class="hand-overlay">
+                <svg id="hand-svg" width="600" height="300">
+                    <!-- Hand visualization will be here -->
+                    <g id="hand-group">
+                        <!-- Fingers will be added here -->
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>Current Note</h3>
+            <div id="current-note">No note selected</div>
+            
+            <h3>Finger Assignment</h3>
+            <div id="finger-info">No finger assigned</div>
+            
+            <h3>Hand Position</h3>
+            <div id="hand-position">Hand not positioned</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
