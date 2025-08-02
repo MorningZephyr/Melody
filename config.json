@@ -1,0 +1,173 @@
+{
+  "app_config": {
+    "name": "Piano Technique Master",
+    "version": "1.0.0",
+    "description": "AI-powered piano learning with hand visualization",
+    "author": "Piano Learning Team"
+  },
+  
+  "server_config": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": true,
+    "cors_origins": ["*"]
+  },
+  
+  "midi_config": {
+    "supported_formats": [".mid", ".midi"],
+    "max_file_size_mb": 10,
+    "default_file": "Alla_Turca_Mozart.mid",
+    "tempo_range": {
+      "min": 0.1,
+      "max": 3.0,
+      "default": 1.0
+    }
+  },
+  
+  "finger_assignment": {
+    "algorithm": "classical_rules",
+    "hand_separation_threshold": 60,
+    "finger_names": {
+      "1": "Thumb",
+      "2": "Index", 
+      "3": "Middle",
+      "4": "Ring",
+      "5": "Pinky"
+    },
+    "right_hand_range": {
+      "min_midi": 60,
+      "max_midi": 108
+    },
+    "left_hand_range": {
+      "min_midi": 21,
+      "max_midi": 59
+    }
+  },
+  
+  "difficulty_assessment": {
+    "factors": {
+      "note_span_weight": 0.3,
+      "rhythm_complexity_weight": 0.3,
+      "chord_density_weight": 0.2,
+      "tempo_weight": 0.2
+    },
+    "thresholds": {
+      "beginner": 1,
+      "intermediate": 3,
+      "advanced": 5
+    }
+  },
+  
+  "visualization": {
+    "piano_keys": {
+      "white_key_width": 40,
+      "white_key_height": 200,
+      "black_key_width": 28,
+      "black_key_height": 120,
+      "octave_range": [3, 5]
+    },
+    "hand_svg": {
+      "width": 300,
+      "height": 200,
+      "finger_colors": {
+        "base": "#e9ecef",
+        "active": "#4facfe",
+        "highlight": "#ff6b6b"
+      }
+    },
+    "animations": {
+      "key_press_duration": 200,
+      "finger_highlight_duration": 300,
+      "progress_update_duration": 250
+    }
+  },
+  
+  "learning_features": {
+    "progress_tracking": true,
+    "technique_suggestions": true,
+    "difficulty_analysis": true,
+    "hand_separation": true,
+    "tempo_control": true,
+    "keyboard_shortcuts": {
+      "play_pause": "Space",
+      "step_forward": "ArrowRight", 
+      "step_backward": "ArrowLeft",
+      "reset": "KeyR"
+    }
+  },
+  
+  "future_ml_config": {
+    "computer_vision": {
+      "enabled": false,
+      "hand_tracking_model": "mediapipe",
+      "confidence_threshold": 0.7,
+      "detection_frequency_ms": 100
+    },
+    "technique_ai": {
+      "enabled": false,
+      "model_path": "models/technique_classifier.pkl",
+      "feedback_categories": [
+        "hand_position",
+        "finger_curve", 
+        "wrist_alignment",
+        "finger_independence"
+      ]
+    },
+    "adaptive_learning": {
+      "enabled": false,
+      "personalization_model": "models/learning_optimizer.pkl",
+      "difficulty_adjustment": true,
+      "practice_recommendations": true
+    }
+  },
+  
+  "data_collection": {
+    "anonymous_usage_stats": false,
+    "performance_metrics": false,
+    "technique_corrections": false,
+    "learning_progress": false
+  },
+  
+  "api_endpoints": {
+    "/api/parse-midi": {
+      "method": "POST",
+      "description": "Parse default MIDI file",
+      "rate_limit": "10/minute"
+    },
+    "/api/upload-midi": {
+      "method": "POST", 
+      "description": "Upload and parse custom MIDI",
+      "rate_limit": "5/minute"
+    },
+    "/api/hand-analysis": {
+      "method": "POST",
+      "description": "Analyze hand position",
+      "rate_limit": "30/minute"
+    },
+    "/api/health": {
+      "method": "GET",
+      "description": "Health check",
+      "rate_limit": "60/minute"
+    }
+  },
+  
+  "security": {
+    "file_upload_validation": true,
+    "sanitize_inputs": true,
+    "cors_protection": true,
+    "rate_limiting": false
+  },
+  
+  "performance": {
+    "caching": {
+      "midi_analysis_cache": true,
+      "difficulty_cache": true,
+      "fingering_cache": true
+    },
+    "optimization": {
+      "compress_responses": true,
+      "minify_json": false,
+      "batch_processing": true
+    }
+  }
+}

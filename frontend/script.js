@@ -1,252 +1,490 @@
+// Piano Learning App - Enhanced JavaScript
 class PianoLearningApp {
     constructor() {
-        this.currentNoteIndex = 0;
         this.notes = [];
+        this.handPositions = [];
+        this.currentNoteIndex = 0;
         this.isPlaying = false;
-        this.animationId = null;
+        this.playbackSpeed = 1.0;
+        this.visibleHands = 'both';
+        this.playbackTimer = null;
         
-        this.init();
+        this.initializeApp();
     }
 
-    init() {
+    initializeApp() {
         this.createPianoKeys();
+        this.setupEventListeners();
         this.createHandVisualization();
-        this.bindEvents();
-        this.loadSampleData(); // For demo purposes
+    }
+
+    setupEventListeners() {
+        // Main controls
+        document.getElementById('load-midi').addEventListener('click', () => this.loadMIDI());
+        document.getElementById('play-pause').addEventListener('click', () => this.togglePlayback());
+        document.getElementById('reset').addEventListener('click', () => this.resetPlayback());
+        
+        // Playback controls
+        document.getElementById('tempo-slider').addEventListener('input', (e) => this.setTempo(e.target.value));
+        document.getElementById('hand-selector').addEventListener('change', (e) => this.setVisibleHands(e.target.value));
+        
+        // Window resize handler to recreate piano keys with correct sizing
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.createPianoKeys();
+            }, 250);
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
     }
 
     createPianoKeys() {
         const pianoKeys = document.getElementById('piano-keys');
-        const whiteKeys = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-        const blackKeys = ['C#', 'D#', 'F#', 'G#', 'A#'];
+        pianoKeys.innerHTML = '';
         
-        // Create white keys
-        whiteKeys.forEach((note, index) => {
-            const key = document.createElement('div');
-            key.className = 'piano-key';
-            key.textContent = note;
-            key.dataset.note = note;
-            key.dataset.midi = 60 + index; // C4 = 60
-            pianoKeys.appendChild(key);
-        });
+        // Create container for proper layering
+        const whiteKeysContainer = document.createElement('div');
+        whiteKeysContainer.className = 'white-keys-container';
+        
+        const blackKeysContainer = document.createElement('div');
+        blackKeysContainer.className = 'black-keys-container';
+        
+        // Piano keyboard pattern for each octave
+        const keyPattern = [
+            { note: 'C', type: 'white', hasSharp: true },
+            { note: 'D', type: 'white', hasSharp: true },
+            { note: 'E', type: 'white', hasSharp: false },
+            { note: 'F', type: 'white', hasSharp: true },
+            { note: 'G', type: 'white', hasSharp: true },
+            { note: 'A', type: 'white', hasSharp: true },
+            { note: 'B', type: 'white', hasSharp: false }
+        ];
+        
+        let whiteKeyIndex = 0;
+        
+        // Calculate key dimensions based on screen size
+        const isMobile = window.innerWidth <= 768;
+        const whiteKeyWidth = isMobile ? 30 : 40;
+        const whiteKeySpacing = isMobile ? 32 : 42;
+        const blackKeyOffset = isMobile ? 21 : 28;
+        
+        for (let octave = 3; octave <= 5; octave++) {
+            keyPattern.forEach((keyInfo, patternIndex) => {
+                const noteName = keyInfo.note + octave;
+                const midi = this.noteToMidi(noteName);
+                
+                // Create white key
+                const whiteKey = this.createKey(noteName, midi, 'white-key');
+                whiteKey.style.left = `${whiteKeyIndex * whiteKeySpacing}px`;
+                whiteKeysContainer.appendChild(whiteKey);
+                
+                // Create black key if this white key has a sharp
+                if (keyInfo.hasSharp) {
+                    const sharpName = keyInfo.note + '#' + octave;
+                    const sharpMidi = this.noteToMidi(sharpName);
+                    const blackKey = this.createKey(sharpName, sharpMidi, 'black-key');
+                    
+                    // Position black key between white keys
+                    blackKey.style.left = `${whiteKeyIndex * whiteKeySpacing + blackKeyOffset}px`;
+                    blackKeysContainer.appendChild(blackKey);
+                }
+                
+                whiteKeyIndex++;
+            });
+        }
+        
+        pianoKeys.appendChild(whiteKeysContainer);
+        pianoKeys.appendChild(blackKeysContainer);
+    }
 
-        // Create black keys
-        const blackKeyPositions = [0, 1, 3, 4, 5]; // Positions between white keys
-        blackKeys.forEach((note, index) => {
-            const key = document.createElement('div');
-            key.className = 'piano-key black';
-            key.textContent = note;
-            key.dataset.note = note;
-            key.dataset.midi = 61 + index; // C#4 = 61
-            key.style.left = `${(blackKeyPositions[index] * 40) + 30}px`;
-            pianoKeys.appendChild(key);
-        });
+    createKey(noteName, midi, className) {
+        const key = document.createElement('div');
+        key.className = `piano-key ${className}`;
+        key.dataset.note = noteName;
+        key.dataset.midi = midi;
+        
+        // Add key label
+        const label = document.createElement('div');
+        label.className = 'key-label';
+        label.textContent = noteName;
+        key.appendChild(label);
+        
+        // Add finger indicator
+        const fingerIndicator = document.createElement('div');
+        fingerIndicator.className = 'finger-indicator';
+        key.appendChild(fingerIndicator);
+        
+        // Add click handler
+        key.addEventListener('click', () => this.playKey(midi, noteName));
+        
+        return key;
     }
 
     createHandVisualization() {
-        const handGroup = document.getElementById('hand-group');
-        
-        // Create 5 fingers (thumb to pinky)
-        const fingers = [
-            { id: 'thumb', x: 100, y: 200, label: 'T', color: '#ff6b6b' },
-            { id: 'index', x: 120, y: 180, label: '1', color: '#ff6b6b' },
-            { id: 'middle', x: 140, y: 160, label: '2', color: '#ff6b6b' },
-            { id: 'ring', x: 160, y: 180, label: '3', color: '#ff6b6b' },
-            { id: 'pinky', x: 180, y: 200, label: '4', color: '#ff6b6b' }
-        ];
+        this.createHandSVG('right-hand-svg', 'right');
+        this.createHandSVG('left-hand-svg', 'left');
+    }
 
-        fingers.forEach(finger => {
-            // Create finger circle
-            const fingerElement = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            fingerElement.setAttribute('cx', finger.x);
-            fingerElement.setAttribute('cy', finger.y);
-            fingerElement.setAttribute('r', '15');
-            fingerElement.setAttribute('class', 'finger');
-            fingerElement.setAttribute('id', finger.id);
+    createHandSVG(svgId, hand) {
+        const svg = document.getElementById(svgId);
+        const group = svg.querySelector('g');
+        
+        // Hand position and finger coordinates
+        const fingerPositions = {
+            right: [
+                { x: 50, y: 150, width: 25, height: 80, finger: 1 },  // Thumb
+                { x: 85, y: 120, width: 20, height: 110, finger: 2 }, // Index
+                { x: 115, y: 110, width: 20, height: 120, finger: 3 }, // Middle
+                { x: 145, y: 115, width: 20, height: 115, finger: 4 }, // Ring
+                { x: 175, y: 125, width: 18, height: 105, finger: 5 }  // Pinky
+            ],
+            left: [
+                { x: 175, y: 150, width: 25, height: 80, finger: 1 },  // Thumb
+                { x: 145, y: 120, width: 20, height: 110, finger: 2 }, // Index
+                { x: 115, y: 110, width: 20, height: 120, finger: 3 }, // Middle
+                { x: 85, y: 115, width: 20, height: 115, finger: 4 },  // Ring
+                { x: 55, y: 125, width: 18, height: 105, finger: 5 }   // Pinky
+            ]
+        };
+
+        fingerPositions[hand].forEach(finger => {
+            // Create finger shape
+            const fingerElement = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            fingerElement.setAttribute('cx', finger.x + finger.width / 2);
+            fingerElement.setAttribute('cy', finger.y + finger.height / 2);
+            fingerElement.setAttribute('rx', finger.width / 2);
+            fingerElement.setAttribute('ry', finger.height / 2);
+            fingerElement.setAttribute('class', 'finger finger-base');
+            fingerElement.setAttribute('data-finger', finger.finger);
             
-            // Create finger label
-            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            label.setAttribute('x', finger.x);
-            label.setAttribute('y', finger.y + 4);
-            label.setAttribute('class', 'finger-label');
-            label.textContent = finger.label;
+            // Add finger number
+            const fingerNumber = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            fingerNumber.setAttribute('x', finger.x + finger.width / 2);
+            fingerNumber.setAttribute('y', finger.y + finger.height / 2);
+            fingerNumber.setAttribute('class', 'finger-number');
+            fingerNumber.textContent = finger.finger;
             
-            handGroup.appendChild(fingerElement);
-            handGroup.appendChild(label);
+            group.appendChild(fingerElement);
+            group.appendChild(fingerNumber);
         });
-    }
-
-    bindEvents() {
-        document.getElementById('load-midi').addEventListener('click', () => this.loadMIDI());
-        document.getElementById('play-pause').addEventListener('click', () => this.togglePlay());
-        document.getElementById('reset').addEventListener('click', () => this.reset());
-    }
-
-    loadSampleData() {
-        // Sample note data for demo
-        this.notes = [
-            { pitch: 'C4', midi: 60, duration: 1, finger: 'thumb', hand: 'right' },
-            { pitch: 'D4', midi: 62, duration: 1, finger: 'index', hand: 'right' },
-            { pitch: 'E4', midi: 64, duration: 1, finger: 'middle', hand: 'right' },
-            { pitch: 'F4', midi: 65, duration: 1, finger: 'thumb', hand: 'right' },
-            { pitch: 'G4', midi: 67, duration: 1, finger: 'index', hand: 'right' },
-            { pitch: 'A4', midi: 69, duration: 1, finger: 'middle', hand: 'right' },
-            { pitch: 'B4', midi: 71, duration: 1, finger: 'ring', hand: 'right' },
-            { pitch: 'C5', midi: 72, duration: 1, finger: 'pinky', hand: 'right' }
-        ];
-        
-        this.updateInfo();
-    }
-
-    assignFingerToNote(note) {
-        // Simple finger assignment algorithm
-        const midi = note.midi;
-        const octave = Math.floor(midi / 12);
-        const noteInOctave = midi % 12;
-        
-        // Basic finger assignment based on note position
-        if (noteInOctave <= 1) return 'thumb';      // C, C#
-        if (noteInOctave <= 3) return 'index';      // D, D#
-        if (noteInOctave <= 5) return 'middle';     // E, F
-        if (noteInOctave <= 7) return 'ring';       // F#, G
-        if (noteInOctave <= 9) return 'pinky';      // G#, A
-        return 'pinky';                              // A#, B
-    }
-
-    showHandPosition(note) {
-        // Clear previous highlights
-        this.clearHighlights();
-        
-        // Highlight the key
-        const keyElement = document.querySelector(`[data-midi="${note.midi}"]`);
-        if (keyElement) {
-            keyElement.classList.add('active');
-        }
-        
-        // Highlight the finger
-        const fingerElement = document.getElementById(note.finger);
-        if (fingerElement) {
-            fingerElement.classList.add('active');
-        }
-        
-        // Update info panel
-        this.updateCurrentNote(note);
-    }
-
-    clearHighlights() {
-        // Clear piano key highlights
-        document.querySelectorAll('.piano-key').forEach(key => {
-            key.classList.remove('active');
-        });
-        
-        // Clear finger highlights
-        document.querySelectorAll('.finger').forEach(finger => {
-            finger.classList.remove('active');
-        });
-    }
-
-    updateCurrentNote(note) {
-        document.getElementById('current-note').textContent = 
-            `${note.pitch} (MIDI: ${note.midi})`;
-        
-        document.getElementById('finger-info').textContent = 
-            `Use ${note.finger} finger on ${note.pitch}`;
-        
-        document.getElementById('hand-position').textContent = 
-            `${note.hand} hand, ${note.finger} finger`;
-    }
-
-    updateInfo() {
-        if (this.notes.length > 0) {
-            this.showHandPosition(this.notes[this.currentNoteIndex]);
-        }
-    }
-
-    togglePlay() {
-        if (this.isPlaying) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    }
-
-    play() {
-        if (this.notes.length === 0) return;
-        
-        this.isPlaying = true;
-        document.getElementById('play-pause').textContent = 'Pause';
-        
-        this.playNextNote();
-    }
-
-    pause() {
-        this.isPlaying = false;
-        document.getElementById('play-pause').textContent = 'Play';
-        
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-    }
-
-    playNextNote() {
-        if (!this.isPlaying || this.currentNoteIndex >= this.notes.length) {
-            this.pause();
-            return;
-        }
-        
-        const note = this.notes[this.currentNoteIndex];
-        this.showHandPosition(note);
-        
-        // Move to next note after duration
-        setTimeout(() => {
-            this.currentNoteIndex++;
-            this.playNextNote();
-        }, note.duration * 1000); // Convert duration to milliseconds
-    }
-
-    reset() {
-        this.currentNoteIndex = 0;
-        this.pause();
-        this.clearHighlights();
-        this.updateInfo();
     }
 
     async loadMIDI() {
         try {
-            console.log('Loading MIDI file from backend...');
-            
             const response = await fetch('http://localhost:5000/api/parse-midi', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({})
+                }
             });
-            
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Failed to load MIDI file');
             }
-            
+
             const data = await response.json();
             
-            if (data.success) {
-                this.notes = data.notes;
-                this.currentNoteIndex = 0;
-                this.updateInfo();
-                console.log(`Loaded ${data.total_notes} notes from MIDI file`);
-            } else {
-                console.error('Failed to load MIDI data:', data.error);
-            }
+            this.notes = data.notes;
+            this.handPositions = data.hand_positions;
+            this.displayDifficultyInfo(data.difficulty);
+            
+            document.getElementById('play-pause').disabled = false;
+            document.getElementById('total-notes').textContent = data.total_notes;
+            
+            this.showNotification('MIDI file loaded successfully!', 'success');
             
         } catch (error) {
-            console.error('Error loading MIDI file:', error);
-            // Fallback to sample data if backend is not available
-            this.loadSampleData();
+            console.error('Error loading MIDI:', error);
+            this.showNotification('Error loading MIDI file. Make sure the backend is running.', 'error');
         }
+    }
+
+    displayDifficultyInfo(difficulty) {
+        const badge = document.getElementById('difficulty-badge');
+        const details = document.getElementById('difficulty-details');
+        
+        badge.textContent = difficulty.level;
+        badge.className = `difficulty-badge difficulty-${difficulty.level.toLowerCase()}`;
+        
+        details.innerHTML = `
+            <p><strong>Complexity Score:</strong> ${difficulty.score}/5</p>
+            <p><strong>Total Notes:</strong> ${difficulty.total_notes}</p>
+            <p><strong>Note Range:</strong> ${difficulty.note_span} semitones</p>
+            ${difficulty.factors.length > 0 ? 
+                `<p><strong>Challenges:</strong> ${difficulty.factors.join(', ')}</p>` : ''}
+        `;
+    }
+
+    togglePlayback() {
+        if (this.isPlaying) {
+            this.pausePlayback();
+        } else {
+            this.startPlayback();
+        }
+    }
+
+    startPlayback() {
+        if (this.notes.length === 0) {
+            this.showNotification('Please load a MIDI file first', 'warning');
+            return;
+        }
+
+        this.isPlaying = true;
+        document.getElementById('play-pause').innerHTML = '<span>⏸️</span> Pause';
+        
+        this.playNextNote();
+    }
+
+    pausePlayback() {
+        this.isPlaying = false;
+        document.getElementById('play-pause').innerHTML = '<span>▶️</span> Play';
+        
+        if (this.playbackTimer) {
+            clearTimeout(this.playbackTimer);
+        }
+    }
+
+    resetPlayback() {
+        this.pausePlayback();
+        this.currentNoteIndex = 0;
+        this.clearAllHighlights();
+        this.updateProgress();
+        document.getElementById('current-note').textContent = 'None';
+        document.getElementById('finger-info').textContent = 'None';
+        document.getElementById('hand-position').textContent = 'None';
+        document.getElementById('current-time').textContent = '0.0s';
+    }
+
+    playNextNote() {
+        if (!this.isPlaying || this.currentNoteIndex >= this.notes.length) {
+            this.pausePlayback();
+            this.showNotification('Playback completed!', 'success');
+            return;
+        }
+
+        const note = this.notes[this.currentNoteIndex];
+        this.displayCurrentNote(note);
+        this.highlightKey(note);
+        this.highlightFinger(note);
+        this.updateProgress();
+        
+        // Calculate delay to next note
+        const nextNote = this.notes[this.currentNoteIndex + 1];
+        const delay = nextNote ? 
+            (nextNote.offset - note.offset) * 1000 / this.playbackSpeed : 
+            note.duration * 1000 / this.playbackSpeed;
+
+        this.currentNoteIndex++;
+        
+        this.playbackTimer = setTimeout(() => {
+            this.playNextNote();
+        }, Math.max(delay, 100)); // Minimum 100ms delay
+    }
+
+    displayCurrentNote(note) {
+        document.getElementById('current-note').textContent = note.pitch;
+        document.getElementById('finger-info').textContent = `${note.finger} (${note.finger_name})`;
+        document.getElementById('hand-position').textContent = note.hand === 'right' ? 'Right Hand' : 'Left Hand';
+        document.getElementById('current-time').textContent = `${note.offset.toFixed(1)}s`;
+    }
+
+    highlightKey(note) {
+        // Clear previous highlights
+        this.clearKeyHighlights();
+        
+        // Highlight current key
+        const key = document.querySelector(`[data-midi="${note.midi}"]`);
+        if (key) {
+            key.classList.add('active');
+            
+            // Show finger indicator
+            const fingerIndicator = key.querySelector('.finger-indicator');
+            if (fingerIndicator) {
+                fingerIndicator.textContent = note.finger;
+                fingerIndicator.classList.add('show');
+            }
+        }
+    }
+
+    highlightFinger(note) {
+        // Clear previous finger highlights
+        this.clearFingerHighlights();
+        
+        // Highlight current finger
+        const handSvg = note.hand === 'right' ? 'right-hand-svg' : 'left-hand-svg';
+        const finger = document.querySelector(`#${handSvg} [data-finger="${note.finger}"]`);
+        
+        if (finger) {
+            finger.classList.remove('finger-base');
+            finger.classList.add('finger-active');
+        }
+    }
+
+    clearAllHighlights() {
+        this.clearKeyHighlights();
+        this.clearFingerHighlights();
+    }
+
+    clearKeyHighlights() {
+        document.querySelectorAll('.piano-key.active').forEach(key => {
+            key.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.finger-indicator.show').forEach(indicator => {
+            indicator.classList.remove('show');
+        });
+    }
+
+    clearFingerHighlights() {
+        document.querySelectorAll('.finger-active').forEach(finger => {
+            finger.classList.remove('finger-active');
+            finger.classList.add('finger-base');
+        });
+    }
+
+    updateProgress() {
+        const progress = this.notes.length > 0 ? (this.currentNoteIndex / this.notes.length) * 100 : 0;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+        document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+        document.getElementById('notes-played').textContent = this.currentNoteIndex;
+    }
+
+    setTempo(speed) {
+        this.playbackSpeed = parseFloat(speed);
+        document.getElementById('tempo-display').textContent = `${Math.round(speed * 100)}%`;
+    }
+
+    setVisibleHands(hands) {
+        this.visibleHands = hands;
+        
+        const leftHand = document.getElementById('left-hand-container');
+        const rightHand = document.getElementById('right-hand-container');
+        
+        switch (hands) {
+            case 'right':
+                leftHand.style.display = 'none';
+                rightHand.style.display = 'block';
+                break;
+            case 'left':
+                leftHand.style.display = 'block';
+                rightHand.style.display = 'none';
+                break;
+            case 'both':
+            default:
+                leftHand.style.display = 'block';
+                rightHand.style.display = 'block';
+                break;
+        }
+    }
+
+    handleKeyboard(event) {
+        switch (event.code) {
+            case 'Space':
+                event.preventDefault();
+                this.togglePlayback();
+                break;
+            case 'ArrowRight':
+                event.preventDefault();
+                if (!this.isPlaying && this.currentNoteIndex < this.notes.length) {
+                    this.currentNoteIndex++;
+                    this.displayCurrentNote(this.notes[this.currentNoteIndex - 1]);
+                    this.updateProgress();
+                }
+                break;
+            case 'ArrowLeft':
+                event.preventDefault();
+                if (!this.isPlaying && this.currentNoteIndex > 0) {
+                    this.currentNoteIndex--;
+                    this.displayCurrentNote(this.notes[this.currentNoteIndex]);
+                    this.updateProgress();
+                }
+                break;
+            case 'KeyR':
+                event.preventDefault();
+                this.resetPlayback();
+                break;
+        }
+    }
+
+    playKey(midi, noteName) {
+        // Visual feedback for manual key press
+        const key = document.querySelector(`[data-midi="${midi}"]`);
+        if (key) {
+            key.classList.add('pulse');
+            setTimeout(() => key.classList.remove('pulse'), 600);
+        }
+        
+        console.log(`Playing note: ${noteName} (MIDI: ${midi})`);
+    }
+
+    noteToMidi(noteName) {
+        const noteMap = {
+            'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
+            'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11
+        };
+        
+        const match = noteName.match(/([A-G]#?)(\d+)/);
+        if (!match) return 60; // Default to middle C
+        
+        const note = match[1];
+        const octave = parseInt(match[2]);
+        
+        return (octave + 1) * 12 + noteMap[note];
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        // Style the notification
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '15px 20px',
+            borderRadius: '8px',
+            color: 'white',
+            fontWeight: '500',
+            zIndex: '10000',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            transform: 'translateX(100%)',
+            transition: 'transform 0.3s ease'
+        });
+        
+        // Set background color based on type
+        const colors = {
+            success: '#4CAF50',
+            error: '#f44336',
+            warning: '#ff9800',
+            info: '#2196F3'
+        };
+        notification.style.background = colors[type] || colors.info;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto remove
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 }
 
 // Initialize the app when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new PianoLearningApp();
-}); 
+    window.pianoApp = new PianoLearningApp();
+});

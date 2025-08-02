@@ -3,44 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piano Learning App</title>
+    <title>Piano Learning App - Master Your Technique</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>Piano Learning App</h1>
+        <header class="app-header">
+            <h1>🎹 Piano Technique Master</h1>
+            <p>Learn piano pieces with AI-powered finger positioning and technique analysis</p>
+        </header>
         
-        <div class="controls">
-            <button id="load-midi">Load MIDI File</button>
-            <button id="play-pause">Play/Pause</button>
-            <button id="reset">Reset</button>
-        </div>
-
-        <div class="piano-container">
-            <div class="piano-keys" id="piano-keys">
-                <!-- Piano keys will be generated here -->
+        <div class="controls-section">
+            <div class="main-controls">
+                <button id="load-midi" class="btn btn-primary">
+                    <span>🎵</span> Load Piano Piece
+                </button>
+                <button id="play-pause" class="btn btn-secondary" disabled>
+                    <span>▶️</span> Play
+                </button>
+                <button id="reset" class="btn btn-outline">
+                    <span>🔄</span> Reset
+                </button>
             </div>
             
-            <div class="hand-overlay">
-                <svg id="hand-svg" width="600" height="300">
-                    <!-- Hand visualization will be here -->
-                    <g id="hand-group">
-                        <!-- Fingers will be added here -->
-                    </g>
-                </svg>
+            <div class="playback-controls">
+                <label for="tempo-slider">Tempo:</label>
+                <input type="range" id="tempo-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+                <span id="tempo-display">100%</span>
+                
+                <label for="hand-selector">Show Hand:</label>
+                <select id="hand-selector">
+                    <option value="both">Both Hands</option>
+                    <option value="right">Right Hand Only</option>
+                    <option value="left">Left Hand Only</option>
+                </select>
             </div>
         </div>
 
-        <div class="info-panel">
-            <h3>Current Note</h3>
-            <div id="current-note">No note selected</div>
-            
-            <h3>Finger Assignment</h3>
-            <div id="finger-info">No finger assigned</div>
-            
-            <h3>Hand Position</h3>
-            <div id="hand-position">Hand not positioned</div>
+        <div class="main-content">
+            <div class="piano-section">
+                <div class="piano-container">
+                    <div class="piano-keys" id="piano-keys">
+                        <!-- Piano keys will be generated here -->
+                    </div>
+                    
+                    <div class="hand-visualization">
+                        <div class="hand-container" id="right-hand-container">
+                            <h4>Right Hand</h4>
+                            <svg id="right-hand-svg" width="300" height="200" viewBox="0 0 300 200">
+                                <g id="right-hand-group">
+                                    <!-- Right hand fingers -->
+                                </g>
+                            </svg>
+                        </div>
+                        
+                        <div class="hand-container" id="left-hand-container">
+                            <h4>Left Hand</h4>
+                            <svg id="left-hand-svg" width="300" height="200" viewBox="0 0 300 200">
+                                <g id="left-hand-group">
+                                    <!-- Left hand fingers -->
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="piece-info card">
+                    <h3>📊 Piece Analysis</h3>
+                    <div id="difficulty-info">
+                        <div class="difficulty-badge" id="difficulty-badge">
+                            Loading...
+                        </div>
+                        <div id="difficulty-details"></div>
+                    </div>
+                </div>
+
+                <div class="current-state card">
+                    <h3>🎹 Current Position</h3>
+                    <div class="state-grid">
+                        <div class="state-item">
+                            <label>Note:</label>
+                            <span id="current-note">None</span>
+                        </div>
+                        <div class="state-item">
+                            <label>Finger:</label>
+                            <span id="finger-info">None</span>
+                        </div>
+                        <div class="state-item">
+                            <label>Hand:</label>
+                            <span id="hand-position">None</span>
+                        </div>
+                        <div class="state-item">
+                            <label>Time:</label>
+                            <span id="current-time">0.0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="technique-tips card">
+                    <h3>💡 Technique Tips</h3>
+                    <div id="technique-suggestions">
+                        <p>Load a piece to get personalized technique suggestions!</p>
+                    </div>
+                </div>
+
+                <div class="progress-section card">
+                    <h3>📈 Learning Progress</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                        <span class="progress-text" id="progress-text">0%</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat">
+                            <span class="stat-value" id="notes-played">0</span>
+                            <span class="stat-label">Notes Played</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="total-notes">0</span>
+                            <span class="stat-label">Total Notes</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="accuracy">100%</span>
+                            <span class="stat-label">Technique Score</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div class="advanced-features">
+            <div class="feature-card">
+                <h4>🤖 AI Analysis</h4>
+                <p>Get AI-powered fingering suggestions based on classical piano technique</p>
+            </div>
+            <div class="feature-card">
+                <h4>👁️ Hand Tracking</h4>
+                <p>Future: Real-time hand position analysis using computer vision</p>
+            </div>
+            <div class="feature-card">
+                <h4>📚 Practice Mode</h4>
+                <p>Interactive practice sessions with immediate feedback</p>
+            </div>
+        </div>
+
+        <footer class="app-footer">
+            <p>Piano Technique Master - Developed for advanced piano learning</p>
+        </footer>
     </div>
 
     <script src="script.js"></script>
